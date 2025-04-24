@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cross-Origin-Resource-Policy" content="cross-origin">
     <title>Ukraine Conflict Data Dashboard</title>
     <link rel="stylesheet" href="https://d1a3f4spazzrp4.cloudfront.net/kepler.gl/uber-fonts/4.0.0/superfine.css">
     <link href="https://unpkg.com/kepler.gl@3.1.1/umd/keplergl.min.css" rel="stylesheet">
@@ -478,19 +479,31 @@
          */
         async function fetchCSVData(url) {
             try {
+                console.log(`Attempting to fetch data from: ${url}`);
                 const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const csvText = await response.text();
+                console.log(`Successfully fetched ${url}, length: ${csvText.length} bytes`);
                 
                 return new Promise((resolve, reject) => {
                     Papa.parse(csvText, {
                         header: true,
                         dynamicTyping: true,
-                        complete: results => resolve(results.data),
-                        error: error => reject(error)
+                        complete: results => {
+                            console.log(`Successfully parsed ${url}, rows: ${results.data.length}`);
+                            console.log('Sample of first row:', results.data[0]);
+                            resolve(results.data);
+                        },
+                        error: error => {
+                            console.error(`Error parsing ${url}:`, error);
+                            reject(error);
+                        }
                     });
                 });
             } catch (error) {
-                console.error('Error fetching CSV data:', error);
+                console.error(`Error fetching CSV data from ${url}:`, error);
                 return [];
             }
         }
@@ -863,12 +876,17 @@
             let rawData = null;
             
             try {
-                // Load data
-                document.getElementById('droneStrikesLoading').style.display = 'flex';
+                console.log('Starting to load Ukraine_clean_full.csv');
                 rawData = await fetchCSVData('Ukraine_clean_full.csv');
+                console.log('Loaded data:', rawData.length, 'rows');
+                
+                if (!rawData || rawData.length === 0) {
+                    throw new Error('No data loaded from Ukraine_clean_full.csv');
+                }
                 
                 // Process data
                 processedData = processDroneStrikeData(rawData, timeScale);
+                console.log('Processed data:', processedData);
                 
                 // Update statistics
                 updateStatistics(processedData);
@@ -1295,12 +1313,17 @@
             let rawData = null;
             
             try {
-                // Load data
-                document.getElementById('equipmentLoading').style.display = 'flex';
+                console.log('Starting to load EQ_clean.csv');
                 rawData = await fetchCSVData('EQ_clean.csv');
+                console.log('Loaded data:', rawData.length, 'rows');
                 
-                // Process datas
+                if (!rawData || rawData.length === 0) {
+                    throw new Error('No data loaded from EQ_clean.csv');
+                }
+                
+                // Process data
                 processedData = processEquipmentData(rawData, currentEquipmentType);
+                console.log('Processed equipment data:', processedData);
                 
                 // Update statistics
                 updateEquipmentStatistics(processedData, currentEquipmentType);
