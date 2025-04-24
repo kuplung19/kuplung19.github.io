@@ -525,18 +525,48 @@
                     Papa.parse(csvText, {
                         header: true,
                         dynamicTyping: true,
-                        skipEmptyLines: true, // Add this to skip empty lines
+                        skipEmptyLines: true,
+                        delimiter: ',',
+                        transformHeader: (header) => header.trim(),
+                        transform: (value) => {
+                            if (typeof value === 'string') {
+                                // Remove any quotes and trim whitespace
+                                return value.replace(/['"]/g, '').trim();
+                            }
+                            return value;
+                        },
                         complete: results => {
                             if (results.errors.length > 0) {
                                 console.warn('CSV parsing had errors:', results.errors);
                             }
-                            if (results.data.length === 0) {
-                                reject(new Error('No data rows in CSV'));
+                            
+                            // Validate data
+                            const validData = results.data.filter(row => {
+                                // Check for required fields
+                                if (!row.event_date && !row.Date) {
+                                    console.warn('Row missing date:', row);
+                                    return false;
+                                }
+                                
+                                // Validate date format
+                                const dateStr = row.event_date || row.Date;
+                                const date = new Date(dateStr);
+                                if (isNaN(date.getTime())) {
+                                    console.warn('Invalid date format:', dateStr);
+                                    return false;
+                                }
+                                
+                                return true;
+                            });
+                            
+                            if (validData.length === 0) {
+                                reject(new Error('No valid data rows found after validation'));
                                 return;
                             }
-                            console.log(`Successfully parsed ${url}, rows: ${results.data.length}`);
-                            console.log('Sample of first row:', results.data[0]);
-                            resolve(results.data);
+                            
+                            console.log(`Successfully parsed ${url}, valid rows: ${validData.length}`);
+                            console.log('Sample of first row:', validData[0]);
+                            resolve(validData);
                         },
                         error: error => {
                             console.error(`Error parsing ${url}:`, error);
