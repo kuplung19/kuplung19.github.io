@@ -290,6 +290,26 @@
         .enable-button:hover {
             background-color: #0091cc;
         }
+        
+        .error-message {
+            background-color: #ffebee;
+            border: 1px solid #ffcdd2;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #c62828;
+        }
+        
+        .error-message p {
+            margin: 5px 0;
+        }
+        
+        #equipmentLoading {
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -504,55 +524,61 @@
         // Modify the fetchCSVData function
         async function fetchCSVData(url) {
             try {
-                console.log(`Attempting to fetch data from: ${url}`);
+                console.log(`Attempting to fetch data from ${url}`);
                 const dataUrl = await getDataUrl(url);
-                console.log(`Using URL: ${dataUrl}`);
-                
                 const response = await fetch(dataUrl);
+                
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 const csvText = await response.text();
-                console.log(`Successfully fetched ${url}, length: ${csvText.length} bytes`);
-                
-                // Add CSV validation
-                if (!csvText.trim()) {
-                    throw new Error('Received empty CSV data');
+                if (!csvText || csvText.trim().length === 0) {
+                    throw new Error('Empty CSV file received');
                 }
                 
                 return new Promise((resolve, reject) => {
                     Papa.parse(csvText, {
                         header: true,
+                        delimiter: ',',
                         dynamicTyping: true,
                         skipEmptyLines: true,
-                        delimiter: ',',
-                        transformHeader: (header) => header.trim(),
-                        transform: (value) => {
+                        transformHeader: header => header.trim(),
+                        transform: value => {
                             if (typeof value === 'string') {
-                                // Remove any quotes and trim whitespace
                                 return value.replace(/['"]/g, '').trim();
                             }
                             return value;
                         },
                         complete: results => {
-                            if (results.errors.length > 0) {
-                                console.warn('CSV parsing had errors:', results.errors);
+                            if (!results.data || results.data.length === 0) {
+                                reject(new Error('No data found in CSV file'));
+                                return;
                             }
                             
-                            // Validate data
+                            // Validate data structure
+                            const requiredFields = ['Date', 'Russia_Total', 'Ukraine_Total'];
+                            const missingFields = requiredFields.filter(field => !results.data[0].hasOwnProperty(field));
+                            if (missingFields.length > 0) {
+                                reject(new Error(`Missing required fields: ${missingFields.join(', ')}`));
+                                return;
+                            }
+                            
+                            // Validate and clean data
                             const validData = results.data.filter(row => {
-                                // Check for required fields
-                                if (!row.event_date && !row.Date) {
-                                    console.warn('Row missing date:', row);
-                                    return false;
-                                }
-                                
                                 // Validate date format
-                                const dateStr = row.event_date || row.Date;
+                                const dateStr = row.Date;
                                 const date = new Date(dateStr);
                                 if (isNaN(date.getTime())) {
                                     console.warn('Invalid date format:', dateStr);
+                                    return false;
+                                }
+                                
+                                // Validate numeric values
+                                const russiaTotal = parseFloat(row.Russia_Total);
+                                const ukraineTotal = parseFloat(row.Ukraine_Total);
+                                if (isNaN(russiaTotal) || isNaN(ukraineTotal)) {
+                                    console.warn('Invalid numeric values:', row);
                                     return false;
                                 }
                                 
@@ -576,7 +602,7 @@
                 });
             } catch (error) {
                 console.error(`Error fetching CSV data from ${url}:`, error);
-                throw error; // Rethrow to handle in calling function
+                throw error;
             }
         }
         
@@ -1336,12 +1362,18 @@
             let processedData = null;
             let rawData = null;
             
+            const loadingElement = document.getElementById('equipmentLoading');
+            loadingElement.innerHTML = 'Loading equipment data...';
+            loadingElement.style.display = 'block';
+            
             try {
                 console.log('Starting to load EQ_clean.csv');
                 try {
                     rawData = await fetchCSVData('EQ_clean.csv');
+                    console.log('Successfully loaded equipment data:', rawData.length, 'rows');
                 } catch (error) {
                     console.error('Failed to load EQ_clean.csv:', error);
+                    loadingElement.innerHTML = 'Error loading data: ' + error.message;
                     // Create minimal fallback data
                     rawData = [
                         { Date: '2022-02-24', Russia_Total: 0, Ukraine_Total: 0 },
@@ -1367,9 +1399,22 @@
                 
                 // Create chart
                 createEquipmentLossesChart(processedData);
+                
+                // Hide loading indicator on success
+                loadingElement.style.display = 'none';
             } catch (error) {
                 console.error('Error in initializeEquipmentLossesChart:', error);
-                document.getElementById('equipmentLoading').innerHTML = 'Error loading chart: ' + error.message;
+                loadingElement.innerHTML = 'Error loading chart: ' + error.message;
+                loadingElement.style.display = 'block';
+                
+                // Show error message to user
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'error-message';
+                errorMessage.innerHTML = `
+                    <p>Unable to load equipment data. Please try refreshing the page.</p>
+                    <p>If the problem persists, please contact support.</p>
+                `;
+                document.getElementById('equipmentChartContainer').appendChild(errorMessage);
             }
         }
 
