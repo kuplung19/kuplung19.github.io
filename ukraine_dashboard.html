@@ -1373,7 +1373,6 @@
                 // Try to load actual data
                 let chartData = [];
                 try {
-                    // Use the getDataUrl function we already have
                     const dataUrl = await getDataUrl('EQ_clean.csv');
                     const response = await fetch(dataUrl);
                     if (!response.ok) {
@@ -1381,21 +1380,29 @@
                     }
                     
                     const csvText = await response.text();
-                    console.log("CSV data sample:", csvText.substring(0, 200)); // Log a sample of the data
+                    console.log("CSV data sample:", csvText.substring(0, 200));
                     
-                    // Parse CSV with explicit delimiter
+                    // Parse CSV with explicit configuration
                     const result = Papa.parse(csvText, {
                         header: true,
-                        delimiter: ',', // Explicitly set delimiter to comma
+                        delimiter: ',',
                         dynamicTyping: true,
                         skipEmptyLines: true,
-                        transformHeader: (header) => header.trim(), // Trim whitespace from headers
-                        transform: (value) => value.trim(), // Trim whitespace from values
-                        complete: function(results, file) {
-                            console.log("Parsing complete:", results.data.length, "rows");
-                            console.log("First row:", results.data[0]);
+                        transformHeader: (header) => header.trim(),
+                        transform: (value) => {
+                            if (typeof value === 'string') {
+                                // Remove any quotes and trim whitespace
+                                return value.replace(/['"]/g, '').trim();
+                            }
+                            return value;
                         },
-                        error: function(error, file) {
+                        complete: function(results) {
+                            console.log("Parsing complete. Found", results.data.length, "rows");
+                            if (results.errors.length > 0) {
+                                console.warn("Parsing warnings:", results.errors);
+                            }
+                        },
+                        error: function(error) {
                             console.error("Parsing error:", error);
                         }
                     });
@@ -1406,35 +1413,42 @@
                         
                         const rawData = result.data.filter(row => {
                             // Validate required fields exist and are not undefined/null
-                            const hasRequiredFields = row.Date && 
-                                                    ('Change1' in row) && 
-                                                    ('Change2' in row);
+                            if (!row.Date) {
+                                console.log("Row missing Date:", row);
+                                return false;
+                            }
                             
-                            // Validate date format
-                            const isValidDate = !isNaN(new Date(row.Date).getTime());
+                            // Convert date string to Date object
+                            const date = new Date(row.Date);
+                            if (isNaN(date.getTime())) {
+                                console.log("Invalid date format:", row.Date);
+                                return false;
+                            }
                             
                             // Validate numeric values
-                            const isValidChange1 = !isNaN(parseFloat(row.Change1));
-                            const isValidChange2 = !isNaN(parseFloat(row.Change2));
+                            const change1 = parseFloat(row.Change1);
+                            const change2 = parseFloat(row.Change2);
+                            if (isNaN(change1) || isNaN(change2)) {
+                                console.log("Invalid change values:", row);
+                                return false;
+                            }
                             
-                            return hasRequiredFields && isValidDate && isValidChange1 && isValidChange2;
+                            return true;
                         });
                         
                         if (rawData.length > 0) {
-                            console.log("Valid rows found:", rawData.length);
-                            console.log("Sample valid row:", rawData[0]);
-                            
+                            console.log(`Successfully validated ${rawData.length} rows of data`);
                             chartData = rawData.map(row => ({
                                 date: new Date(row.Date),
                                 russianChange: parseFloat(row.Change1) || 0,
                                 ukrainianChange: parseFloat(row.Change2) || 0
                             }));
-                            
-                            console.log(`Processed ${chartData.length} data points`);
                         } else {
                             console.warn("No valid rows found after validation");
                             chartData = createTestData();
                         }
+                    } else {
+                        throw new Error("No data found in CSV file");
                     }
                 } catch (error) {
                     console.error("Error loading CSV:", error);
