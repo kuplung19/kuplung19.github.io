@@ -3,10 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cross-Origin-Resource-Policy" content="cross-origin">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <title>Ukraine Conflict Data Dashboard</title>
     <link rel="stylesheet" href="https://d1a3f4spazzrp4.cloudfront.net/kepler.gl/uber-fonts/4.0.0/superfine.css">
     <link href="https://unpkg.com/kepler.gl@3.1.1/umd/keplergl.min.css" rel="stylesheet">
@@ -43,6 +39,31 @@
             font-size: 24px;
             font-weight: bold;
             border-bottom: 1px solid #333;
+        }
+        
+        .text-content {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 1200px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            line-height: 1.6;
+            font-family: 'Uber Move Text', 'Helvetica Neue', Helvetica, sans-serif;
+        }
+        
+        .text-content h1 {
+            color: #00b0ff;
+            margin-bottom: 20px;
+            font-size: 24px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+        
+        .text-content p {
+            margin-bottom: 15px;
+            font-size: 16px;
         }
         
         .content-area {
@@ -290,26 +311,6 @@
         .enable-button:hover {
             background-color: #0091cc;
         }
-        
-        .error-message {
-            background-color: #ffebee;
-            border: 1px solid #ffcdd2;
-            border-radius: 4px;
-            padding: 15px;
-            margin: 10px 0;
-            color: #c62828;
-        }
-        
-        .error-message p {
-            margin: 5px 0;
-        }
-        
-        #equipmentLoading {
-            padding: 10px;
-            margin: 10px 0;
-            background-color: #f5f5f5;
-            border-radius: 4px;
-        }
     </style>
 </head>
 <body>
@@ -319,6 +320,30 @@
         </div>
         
         <div class="content-area">
+            <div class="text-content">
+                <h1>Summary of the Ukraine Conflict</h1>
+                <h2 style="color: #00b0ff; font-size: 20px; margin-top: 25px; margin-bottom: 10px;">1. Rising Importance</h2>
+                <p>Data visualization is playing an increasingly important role in modern research and communication, especially in relation to complex and dynamic events such as the Russia-Ukraine war. The aim of our project is to visually present the losses incurred during the war, population movements, and the destruction of military equipment using detailed and accurate data. Our database enables users to gain information about this serious geopolitical conflict in an easily understandable format.</p>
+                
+                <h2 style="color: #00b0ff; font-size: 20px; margin-top: 25px; margin-bottom: 10px;">2. Project Overview</h2>
+                <p>The project covers the events between January 1, 2018, and March 14, 2025. The data includes precise coordinates of military attacks, details on the loss of military assets and personnel, and the migration processes caused by the war. Special emphasis is placed on the period from February 24, 2022, to March 25, 2023, during which population displacement can be closely followed, while military losses are documented up to March 24, 2025.</p>
+                
+                <h2 style="color: #00b0ff; font-size: 20px; margin-top: 25px; margin-bottom: 10px;">3. Time Frame</h2>
+                <p>The data we process is exceptionally detailed and relatively accurate, providing a valuable resource for researchers, analysts, and those interested in the conflict. The project enables fast and effective conclusions to be drawn about the dynamics and consequences of the war and offers insights that may not be thoroughly covered by traditional news outlets.</p>
+                
+                <h2 style="color: #00b0ff; font-size: 20px; margin-top: 25px; margin-bottom: 10px;">4. Data Value</h2>
+                <p>Our target audience primarily includes those interested in modern warfare and the military, geopolitical, or humanitarian aspects of the Russia-Ukraine conflict. Additionally, our project is also useful for those who simply want a comprehensive overview of the war's events and impacts. Through visualization, not only experts but also laypeople can more easily understand the details and consequences of the conflict.</p>
+                
+                <h2 style="color: #00b0ff; font-size: 20px; margin-top: 25px; margin-bottom: 10px;">5. Target Audience</h2>
+                <p>Our website offers a simple, user-friendly interface that allows for quick and efficient filtering of data. With interactive charts and maps, users can analyze information from various perspectives. The visual representation is not only informative but also illustrative, as people often comprehend data more easily when presented graphically.</p>
+                
+                <h2 style="color: #00b0ff; font-size: 20px; margin-top: 25px; margin-bottom: 10px;">6. User Experience</h2>
+                <p>The concept behind the project is that visually presented information has a stronger impact on the audience than raw data or textual reports alone. Interactive visualizations provide opportunities for deeper analysis and a broader understanding of the war's consequences. All of this can contribute to a better grasp of the social, economic, and military impacts of the conflict.</p>
+                
+                <h2 style="color: #00b0ff; font-size: 20px; margin-top: 25px; margin-bottom: 10px;">7. Visual Impact</h2>
+                <p>In summary, our data visualization project is an innovative and informative initiative that contributes to a deeper understanding of wartime events. Our goal is to provide both the general public and experts with a valuable, reliable, and easily accessible source of information to aid in the analysis and evaluation of various aspects of the conflict.</p>
+            </div>
+            
             <div class="section-container">
                 <h2>Spatial Distribution of Events</h2>
             </div>
@@ -450,34 +475,26 @@
                 </div>
             </div>
             
-            <h2>Event Type Analysis</h2>
-            <div class="visualization-placeholder">
-                Future Event Type Visualization Will Appear Here
-            </div>
-            
-            <h2>Daily Equipment Losses</h2>
-            <div class="visualization-container">
-                <div class="chart-container">
-                    <div id="dailyLossesChartControls">
-                        <button id="dailyShowAll" class="active">All Data</button>
-                        <button id="dailyLast3Months">Last 3 Months</button>
-                        <button id="dailyLast6Months">Last 6 Months</button>
-                        <button id="dailyLastYear">Last Year</button>
-                    </div>
-                    <div id="dailyLossesLoading" class="loading">Loading data from EQ_clean.csv...</div>
-                    <div style="position: relative; height: 500px; width: 100%;">
-                        <canvas id="dailyLossesChart"></canvas>
-                    </div>
-                    <div class="chart-footer">
-                        <div>Data source: EQ_clean.csv</div>
-                        <div>Daily equipment losses (Change1 for Russia, Change2 for Ukraine)</div>
+            <div class="section-container">
+                <h2>Daily Equipment Losses</h2>
+                <div class="visualization-container">
+                    <div class="chart-container">
+                        <div id="dailyLossesChartControls">
+                            <button id="dailyShowAll" class="active">All Data</button>
+                            <button id="dailyLast3Months">Last 3 Months</button>
+                            <button id="dailyLast6Months">Last 6 Months</button>
+                            <button id="dailyLastYear">Last Year</button>
+                        </div>
+                        <div id="dailyLossesLoading" class="loading">Loading data from EQ_clean.csv...</div>
+                        <div style="position: relative; height: 500px; width: 100%;">
+                            <canvas id="dailyLossesChart"></canvas>
+                        </div>
+                        <div class="chart-footer">
+                            <div>Data source: EQ_clean.csv</div>
+                            <div>Daily equipment losses (Change1 for Russia, Change2 for Ukraine)</div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <h2>Severity Assessment</h2>
-            <div class="visualization-placeholder">
-                Future Severity Visualization Will Appear Here
             </div>
         </div>
         
@@ -495,114 +512,27 @@
         const INVASION_START = new Date('2022-02-24');
         const TODAY = new Date();
         
-        // Add this function at the start of your script section
-        async function getDataUrl(filename) {
-            // First try local path
-            try {
-                const response = await fetch(filename);
-                if (response.ok) {
-                    return filename;
-                }
-            } catch (e) {
-                console.log(`Local fetch failed for ${filename}, trying GitHub raw URL`);
-            }
-            
-            // If local fails, use the correct raw GitHub URL for your repository
-            const githubUrl = `https://raw.githubusercontent.com/kuplung19/kuplung19.github.io/main/${filename}`;
-            try {
-                const response = await fetch(githubUrl);
-                if (response.ok) {
-                    return githubUrl;
-                }
-            } catch (e) {
-                console.error(`GitHub fetch failed for ${filename}`);
-            }
-            
-            throw new Error(`Could not load ${filename} from any source`);
-        }
-        
-        // Modify the fetchCSVData function
+        /**
+         * Fetches and parses CSV data
+         * @param {string} url - Path to CSV file
+         * @returns {Promise<Array>} - Parsed data as array of objects
+         */
         async function fetchCSVData(url) {
             try {
-                console.log(`Attempting to fetch data from ${url}`);
-                const dataUrl = await getDataUrl(url);
-                const response = await fetch(dataUrl);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
+                const response = await fetch(url);
                 const csvText = await response.text();
-                if (!csvText || csvText.trim().length === 0) {
-                    throw new Error('Empty CSV file received');
-                }
                 
                 return new Promise((resolve, reject) => {
                     Papa.parse(csvText, {
                         header: true,
-                        delimiter: ',',
                         dynamicTyping: true,
-                        skipEmptyLines: true,
-                        transformHeader: header => header.trim(),
-                        transform: value => {
-                            if (typeof value === 'string') {
-                                return value.replace(/['"]/g, '').trim();
-                            }
-                            return value;
-                        },
-                        complete: results => {
-                            if (!results.data || results.data.length === 0) {
-                                reject(new Error('No data found in CSV file'));
-                                return;
-                            }
-                            
-                            // Validate data structure
-                            const requiredFields = ['Date', 'Russia_Total', 'Ukraine_Total'];
-                            const missingFields = requiredFields.filter(field => !results.data[0].hasOwnProperty(field));
-                            if (missingFields.length > 0) {
-                                reject(new Error(`Missing required fields: ${missingFields.join(', ')}`));
-                                return;
-                            }
-                            
-                            // Validate and clean data
-                            const validData = results.data.filter(row => {
-                                // Validate date format
-                                const dateStr = row.Date;
-                                const date = new Date(dateStr);
-                                if (isNaN(date.getTime())) {
-                                    console.warn('Invalid date format:', dateStr);
-                                    return false;
-                                }
-                                
-                                // Validate numeric values
-                                const russiaTotal = parseFloat(row.Russia_Total);
-                                const ukraineTotal = parseFloat(row.Ukraine_Total);
-                                if (isNaN(russiaTotal) || isNaN(ukraineTotal)) {
-                                    console.warn('Invalid numeric values:', row);
-                                    return false;
-                                }
-                                
-                                return true;
-                            });
-                            
-                            if (validData.length === 0) {
-                                reject(new Error('No valid data rows found after validation'));
-                                return;
-                            }
-                            
-                            console.log(`Successfully parsed ${url}, valid rows: ${validData.length}`);
-                            console.log('Sample of first row:', validData[0]);
-                            resolve(validData);
-                        },
-                        error: error => {
-                            console.error(`Error parsing ${url}:`, error);
-                            reject(error);
-                        }
+                        complete: results => resolve(results.data),
+                        error: error => reject(error)
                     });
                 });
             } catch (error) {
-                console.error(`Error fetching CSV data from ${url}:`, error);
-                throw error;
+                console.error('Error fetching CSV data:', error);
+                return [];
             }
         }
         
@@ -965,7 +895,7 @@
             return window.droneChart;
         }
         
-        // Modify the initialization functions to include better error handling and fallback data
+        // Initialize the visualization
         async function initializeDroneStrikesChart() {
             let isCumulative = false;
             let timeScale = 'week';
@@ -974,39 +904,80 @@
             let rawData = null;
             
             try {
-                console.log('Starting to load Ukraine_clean_full.csv');
-                try {
-                    rawData = await fetchCSVData('Ukraine_clean_full.csv');
-                } catch (error) {
-                    console.error('Failed to load Ukraine_clean_full.csv:', error);
-                    // Create minimal fallback data
-                    rawData = [
-                        { event_date: '2022-02-24', sub_event_type: 'Air/drone strike', fatalities: 0 },
-                        { event_date: '2022-03-01', sub_event_type: 'Air/drone strike', fatalities: 2 }
-                    ];
-                    console.log('Using fallback data');
-                }
-                
-                if (!rawData || rawData.length === 0) {
-                    throw new Error('No data available for drone strikes chart');
-                }
+                // Load data
+                document.getElementById('droneStrikesLoading').style.display = 'flex';
+                rawData = await fetchCSVData('Ukraine_clean_full.csv');
                 
                 // Process data
                 processedData = processDroneStrikeData(rawData, timeScale);
-                console.log('Processed drone strike data:', processedData);
-                
-                if (!processedData || !processedData.dates || processedData.dates.length === 0) {
-                    throw new Error('Failed to process drone strikes data');
-                }
                 
                 // Update statistics
                 updateStatistics(processedData);
                 
                 // Create chart
                 createDroneStrikesChart(processedData, isCumulative);
+                
+                // Setup event listeners for controls
+                document.getElementById('toggleCumulative').addEventListener('click', function() {
+                    isCumulative = !isCumulative;
+                    this.textContent = isCumulative ? 'Show Time Series' : 'Show Cumulative';
+                    
+                    // Filter data if needed
+                    const filteredData = currentMonthsFilter ? 
+                        filterTimeRange(processedData, currentMonthsFilter) : 
+                        processedData;
+                    
+                    createDroneStrikesChart(filteredData, isCumulative);
+                });
+                
+                document.getElementById('timeScale').addEventListener('change', function() {
+                    timeScale = this.value;
+                    processedData = processDroneStrikeData(rawData, timeScale);
+                    updateStatistics(processedData);
+                    
+                    // Filter data if needed
+                    const filteredData = currentMonthsFilter ? 
+                        filterTimeRange(processedData, currentMonthsFilter) : 
+                        processedData;
+                    
+                    createDroneStrikesChart(filteredData, isCumulative);
+                });
+                
+                // Time period filter buttons
+                const timeButtons = ['showAll', 'showLast3Months', 'showLast6Months', 'showLastYear'];
+                timeButtons.forEach(buttonId => {
+                    document.getElementById(buttonId).addEventListener('click', function() {
+                        // Remove active class from all buttons
+                        timeButtons.forEach(id => {
+                            document.getElementById(id).classList.remove('active');
+                        });
+                        
+                        // Add active class to clicked button
+                        this.classList.add('active');
+                        
+                        // Set filter
+                        if (buttonId === 'showAll') {
+                            currentMonthsFilter = null;
+                        } else if (buttonId === 'showLast3Months') {
+                            currentMonthsFilter = 3;
+                        } else if (buttonId === 'showLast6Months') {
+                            currentMonthsFilter = 6;
+                        } else if (buttonId === 'showLastYear') {
+                            currentMonthsFilter = 12;
+                        }
+                        
+                        // Apply filter
+                        const filteredData = currentMonthsFilter ? 
+                            filterTimeRange(processedData, currentMonthsFilter) : 
+                            processedData;
+                        
+                        createDroneStrikesChart(filteredData, isCumulative);
+                    });
+                });
+                
             } catch (error) {
-                console.error('Error in initializeDroneStrikesChart:', error);
-                document.getElementById('droneStrikesLoading').innerHTML = 'Error loading chart: ' + error.message;
+                console.error('Error initializing drone strikes chart:', error);
+                document.getElementById('droneStrikesLoading').innerHTML = 'Error loading data';
             }
         }
         
@@ -1355,44 +1326,22 @@
             return window.equipmentChart;
         }
         
-        // Modify the initialization functions to include better error handling and fallback data
+        /**
+         * Initializes the equipment losses visualization
+         */
         async function initializeEquipmentLossesChart() {
             let currentEquipmentType = 'Total';
             let currentMonthsFilter = null;
             let processedData = null;
             let rawData = null;
             
-            const loadingElement = document.getElementById('equipmentLoading');
-            loadingElement.innerHTML = 'Loading equipment data...';
-            loadingElement.style.display = 'block';
-            
             try {
-                console.log('Starting to load EQ_clean.csv');
-                try {
-                    rawData = await fetchCSVData('EQ_clean.csv');
-                    console.log('Successfully loaded equipment data:', rawData.length, 'rows');
-                } catch (error) {
-                    console.error('Failed to load EQ_clean.csv:', error);
-                    loadingElement.innerHTML = 'Error loading data: ' + error.message;
-                    // Create minimal fallback data
-                    rawData = [
-                        { Date: '2022-02-24', Russia_Total: 0, Ukraine_Total: 0 },
-                        { Date: '2022-03-01', Russia_Total: 10, Ukraine_Total: 5 }
-                    ];
-                    console.log('Using fallback data');
-                }
+                // Load data
+                document.getElementById('equipmentLoading').style.display = 'flex';
+                rawData = await fetchCSVData('EQ_clean.csv');
                 
-                if (!rawData || rawData.length === 0) {
-                    throw new Error('No data available for equipment losses chart');
-                }
-                
-                // Process data
+                // Process datas
                 processedData = processEquipmentData(rawData, currentEquipmentType);
-                console.log('Processed equipment data:', processedData);
-                
-                if (!processedData || !processedData.dates || processedData.dates.length === 0) {
-                    throw new Error('Failed to process equipment data');
-                }
                 
                 // Update statistics
                 updateEquipmentStatistics(processedData, currentEquipmentType);
@@ -1400,21 +1349,53 @@
                 // Create chart
                 createEquipmentLossesChart(processedData);
                 
-                // Hide loading indicator on success
-                loadingElement.style.display = 'none';
-            } catch (error) {
-                console.error('Error in initializeEquipmentLossesChart:', error);
-                loadingElement.innerHTML = 'Error loading chart: ' + error.message;
-                loadingElement.style.display = 'block';
+                // Setup event listeners for equipment type selector
+                document.getElementById('equipmentType').addEventListener('change', function() {
+                    currentEquipmentType = this.value;
+                    processedData = processEquipmentData(rawData, currentEquipmentType);
+                    updateEquipmentStatistics(processedData, currentEquipmentType);
+                    
+                    // Filter data if needed
+                    const filteredData = currentMonthsFilter ? 
+                        filterEquipmentTimeRange(processedData, currentMonthsFilter) : 
+                        processedData;
+                    
+                    createEquipmentLossesChart(filteredData);
+                });
                 
-                // Show error message to user
-                const errorMessage = document.createElement('div');
-                errorMessage.className = 'error-message';
-                errorMessage.innerHTML = `
-                    <p>Unable to load equipment data. Please try refreshing the page.</p>
-                    <p>If the problem persists, please contact support.</p>
-                `;
-                document.getElementById('equipmentChartContainer').appendChild(errorMessage);
+                // Time period filter buttons
+                const timeButtons = ['equipShowAll', 'equipLast3Months', 'equipLast6Months'];
+                timeButtons.forEach(buttonId => {
+                    document.getElementById(buttonId).addEventListener('click', function() {
+                        // Remove active class from all buttons
+                        timeButtons.forEach(id => {
+                            document.getElementById(id).classList.remove('active');
+                        });
+                        
+                        // Add active class to clicked button
+                        this.classList.add('active');
+                        
+                        // Set filter
+                        if (buttonId === 'equipShowAll') {
+                            currentMonthsFilter = null;
+                        } else if (buttonId === 'equipLast3Months') {
+                            currentMonthsFilter = 3;
+                        } else if (buttonId === 'equipLast6Months') {
+                            currentMonthsFilter = 6;
+                        }
+                        
+                        // Apply filter
+                        const filteredData = currentMonthsFilter ? 
+                            filterEquipmentTimeRange(processedData, currentMonthsFilter) : 
+                            processedData;
+                        
+                        createEquipmentLossesChart(filteredData);
+                    });
+                });
+                
+            } catch (error) {
+                console.error('Error initializing equipment losses chart:', error);
+                document.getElementById('equipmentLoading').innerHTML = 'Error loading data';
             }
         }
 
@@ -1448,82 +1429,45 @@
                 // Try to load actual data
                 let chartData = [];
                 try {
-                    const dataUrl = await getDataUrl('EQ_clean.csv');
-                    const response = await fetch(dataUrl);
+                    const response = await fetch('EQ_clean.csv');
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     
                     const csvText = await response.text();
-                    console.log("CSV data sample:", csvText.substring(0, 200));
+                    console.log("CSV data sample:", csvText.substring(0, 200)); // Log a sample of the data
                     
-                    // Parse CSV with explicit configuration
+                    // Parse CSV
                     const result = Papa.parse(csvText, {
                         header: true,
-                        delimiter: ',',
                         dynamicTyping: true,
-                        skipEmptyLines: true,
-                        transformHeader: (header) => header.trim(),
-                        transform: (value) => {
-                            if (typeof value === 'string') {
-                                // Remove any quotes and trim whitespace
-                                return value.replace(/['"]/g, '').trim();
-                            }
-                            return value;
-                        },
-                        complete: function(results) {
-                            console.log("Parsing complete. Found", results.data.length, "rows");
-                            if (results.errors.length > 0) {
-                                console.warn("Parsing warnings:", results.errors);
-                            }
-                        },
-                        error: function(error) {
-                            console.error("Parsing error:", error);
-                        }
+                        skipEmptyLines: true
                     });
                     
-                    // Process data with validation
-                    if (result.data && result.data.length > 0) {
-                        console.log("CSV Headers:", Object.keys(result.data[0]));
+                    if (result.errors && result.errors.length > 0) {
+                        console.warn("CSV parsing had errors:", result.errors);
+                    }
+                    
+                    // Process data
+                    const rawData = result.data.filter(row => 
+                        row.Date && 
+                        typeof row.Change1 !== 'undefined' && 
+                        typeof row.Change2 !== 'undefined'
+                    );
+                    
+                    if (rawData.length > 0) {
+                        console.log("First row sample:", rawData[0]);
                         
-                        const rawData = result.data.filter(row => {
-                            // Validate required fields exist and are not undefined/null
-                            if (!row.Date) {
-                                console.log("Row missing Date:", row);
-                                return false;
-                            }
-                            
-                            // Convert date string to Date object
-                            const date = new Date(row.Date);
-                            if (isNaN(date.getTime())) {
-                                console.log("Invalid date format:", row.Date);
-                                return false;
-                            }
-                            
-                            // Validate numeric values
-                            const change1 = parseFloat(row.Change1);
-                            const change2 = parseFloat(row.Change2);
-                            if (isNaN(change1) || isNaN(change2)) {
-                                console.log("Invalid change values:", row);
-                                return false;
-                            }
-                            
-                            return true;
-                        });
+                        chartData = rawData.map(row => ({
+                            date: new Date(row.Date),
+                            russianChange: parseFloat(row.Change1) || 0,
+                            ukrainianChange: parseFloat(row.Change2) || 0
+                        })).filter(item => !isNaN(item.date.getTime()));
                         
-                        if (rawData.length > 0) {
-                            console.log(`Successfully validated ${rawData.length} rows of data`);
-                            chartData = rawData.map(row => ({
-                                date: new Date(row.Date),
-                                russianChange: parseFloat(row.Change1) || 0,
-                                ukrainianChange: parseFloat(row.Change2) || 0
-                            }));
-                        } else {
-                            console.warn("No valid rows found after validation");
-                            chartData = createTestData();
-                        }
+                        console.log(`Processed ${chartData.length} data points`);
                     } else {
-                        throw new Error("No data found in CSV file");
+                        console.warn("No valid data rows found, using test data");
+                        chartData = createTestData();
                     }
                 } catch (error) {
                     console.error("Error loading CSV:", error);
