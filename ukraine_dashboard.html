@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ukraine Conflict Data Dashboard</title>
+    <link rel="stylesheet" href="https://d1a3f4spazzrp4.cloudfront.net/kepler.gl/uber-fonts/4.0.0/superfine.css">
+    <link href="https://unpkg.com/kepler.gl@3.1.1/umd/keplergl.min.css" rel="stylesheet">
+    <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v1.1.1/mapbox-gl.css" rel="stylesheet">
+    <link href="https://unpkg.com/maplibre-gl@^3/dist/maplibre-gl.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
+    
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            font-family: 'Uber Move Text', 'Helvetica Neue', Helvetica, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .header {
+            height: 60px;
+            background-color: #1a1a1a;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+        }
+        
+        .content-area {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .section-container {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .map-section {
+            width: 100%;
+            margin-bottom: 30px;
+            max-width: 1800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .map-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+        }
+        
+        .map-frame {
+            flex: 1;
+            min-width: calc(50% - 10px);
+            height: 75vh;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #1a1a1a;
+        }
+        
+        .map-frame-title {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 10px;
+            font-size: 14px;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            border-radius: 4px;
+            z-index: 10;
+        }
+        
+        .chart-section {
+            width: 100%;
+            height: 65vh;
+            margin: 20px 0;
+            background-color: #1a1a1a;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .visualization-placeholder {
+            width: 100%;
+            height: 60vh;
+            margin: 20px 0;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            color: #888;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        h2 {
+            color: #e0e0e0;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        
+        .iframe-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .footer {
+            background-color: #1a1a1a;
+            color: #888;
+            text-align: center;
+            padding: 20px;
+            margin-top: auto;
+            font-size: 14px;
+            border-top: 1px solid #333;
+        }
+        
+        #chartControls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button, select {
+            background-color: #333;
+            color: #ddd;
+            border: 1px solid #444;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        button:hover, select:hover {
+            background-color: #444;
+        }
+        
+        button.active {
+            background-color: #00b0ff;
+            color: #111;
+        }
+        
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 16px;
+            color: #888;
+        }
+        
+        .chart-title {
+            text-align: center;
+            color: #ddd;
+            margin-bottom: 15px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .chart-subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .chart-footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #222;
+            border-radius: 8px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00b0ff;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value.fatalities {
+            color: #ff4444;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #aaa;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: calc(100% - 180px);
+            width: 100%;
+        }
+        
+        canvas {
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+        }
+        
+        #dailyLossesChart {
+            height: 500px !important;
+            width: 100% !important;
+        }
+        
+        @media (max-width: 1200px) {
+            .map-frame {
+                min-width: 100%;
+                margin-bottom: 20px;
+            }
+        }
+        
+        .map-placeholder {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            background-color: #1a1a1a;
+            color: #888;
+            font-size: 16px;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .enable-button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #00b0ff;
+            color: #111;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        .enable-button:hover {
+            background-color: #0091cc;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            Ukraine Conflict Data Dashboard
+        </div>
+        
+        <div class="content-area">
+            <div class="section-container">
+                <h2>Spatial Distribution of Events</h2>
+            </div>
+            
+            <div class="map-section">
+                <div class="map-container">
+                    <div class="map-frame">
+                        <div class="iframe-container">
+                            <div class="map-frame-title">Primary Visualization</div>
+                            <div class="map-placeholder">
+                                <p>Map visualization temporarily disabled</p>
+                                <button id="enableMaps" class="enable-button">Enable Maps</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="map-frame">
+                        <div class="iframe-container">
+                            <div class="map-frame-title">Secondary Visualization</div>
+                            <div class="map-placeholder">
+                                <p>Map visualization temporarily disabled</p>
+                                <button id="enableMaps2" class="enable-button">Enable Maps</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-container">
+                <h2>Temporal Visualization</h2>
+                <div class="chart-section">
+                    <div class="chart-title">Air/Drone Strike Incidents (Feb 24, 2022 - Present)</div>
+                    <div class="chart-subtitle">Tracking the evolution of drone warfare in the Ukraine conflict</div>
+                    
+                    <div id="chartControls">
+                        <select id="timeScale">
+                            <option value="day">Daily</option>
+                            <option value="week" selected>Weekly</option>
+                            <option value="month">Monthly</option>
+                        </select>
+                        <button id="toggleCumulative">Show Cumulative</button>
+                        <button id="showAll" class="active">All Data</button>
+                        <button id="showLast3Months">Last 3 Months</button>
+                        <button id="showLast6Months">Last 6 Months</button>
+                        <button id="showLastYear">Last Year</button>
+                    </div>
+                    
+                    <div id="droneStrikesLoading" class="loading">Loading data from Ukraine_clean_full.csv...</div>
+                    
+                    <div class="chart-container">
+                        <canvas id="droneStrikesChart"></canvas>
+                    </div>
+                    
+                    <div class="stats-bar">
+                        <div class="stat-item">
+                            <div id="totalStrikes" class="stat-value">-</div>
+                            <div class="stat-label">Total Drone Strikes</div>
+                        </div>
+                        <div class="stat-item">
+                            <div id="totalFatalities" class="stat-value fatalities">-</div>
+                            <div class="stat-label">Total Fatalities</div>
+                        </div>
+                        <div class="stat-item">
+                            <div id="avgMonthlyStrikes" class="stat-value">-</div>
+                            <div class="stat-label">Avg. Monthly Strikes</div>
+                        </div>
+                        <div class="stat-item">
+                            <div id="avgFatalitiesPerStrike" class="stat-value fatalities">-</div>
+                            <div class="stat-label">Avg. Fatalities Per Strike</div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-footer">
+                        <div>Data source: Ukraine_clean_full.csv</div>
+                        <div>Filtered for "Air/drone strike" sub-event type since February 24, 2022</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-container">
+                <h2>Equipment Losses Analysis</h2>
+                <div class="chart-section">
+                    <div class="chart-title">Military Equipment Losses Over Time</div>
+                    <div class="chart-subtitle">Comparing Russian and Ukrainian equipment losses since the start of the conflict</div>
+                    
+                    <div id="equipmentChartControls">
+                        <select id="equipmentType">
+                            <option value="Total">Total Equipment</option>
+                            <option value="Tanks">Tanks</option>
+                            <option value="AFV">Armored Fighting Vehicles</option>
+                            <option value="APC">Armored Personnel Carriers</option>
+                            <option value="Artillery">Artillery</option>
+                            <option value="Aircraft">Aircraft</option>
+                            <option value="Antiair">Anti-Air Systems</option>
+                        </select>
+                        <button id="equipShowAll" class="active">All Data</button>
+                        <button id="equipLast3Months">Last 3 Months</button>
+                        <button id="equipLast6Months">Last 6 Months</button>
+                    </div>
+                    
+                    <div id="equipmentLoading" class="loading">Loading data from EQ.csv...</div>
+                    
+                    <div class="chart-container">
+                        <canvas id="equipmentLossesChart"></canvas>
+                    </div>
+                    
+                    <div class="stats-bar">
+                        <div class="stat-item">
+                            <div id="totalRussianLosses" class="stat-value">-</div>
+                            <div class="stat-label">Total Russian Losses</div>
+                        </div>
+                        <div class="stat-item">
+                            <div id="totalUkrainianLosses" class="stat-value fatalities">-</div>
+                            <div class="stat-label">Total Ukrainian Losses</div>
+                        </div>
+                        <div class="stat-item">
+                            <div id="lossesRatio" class="stat-value">-</div>
+                            <div class="stat-label">Loss Ratio (RU:UA)</div>
+                        </div>
+                        <div class="stat-item">
+                            <div id="selectedEquipmentStats" class="stat-value">-</div>
+                            <div class="stat-label" id="selectedEquipmentLabel">Current Selection</div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-footer">
+                        <div>Data source: EQ_clean.csv</div>
+                        <div>Equipment loss data since February 24, 2022</div>
+                    </div>
+                </div>
+            </div>
+            
+            <h2>Event Type Analysis</h2>
+            <div class="visualization-placeholder">
+                Future Event Type Visualization Will Appear Here
+            </div>
+            
+            <h2>Daily Equipment Losses</h2>
+            <div class="visualization-container">
+                <div class="chart-container">
+                    <div id="dailyLossesChartControls">
+                        <button id="dailyShowAll" class="active">All Data</button>
+                        <button id="dailyLast3Months">Last 3 Months</button>
+                        <button id="dailyLast6Months">Last 6 Months</button>
+                        <button id="dailyLastYear">Last Year</button>
+                    </div>
+                    <div id="dailyLossesLoading" class="loading">Loading data from EQ_clean.csv...</div>
+                    <div style="position: relative; height: 500px; width: 100%;">
+                        <canvas id="dailyLossesChart"></canvas>
+                    </div>
+                    <div class="chart-footer">
+                        <div>Data source: EQ_clean.csv</div>
+                        <div>Daily equipment losses (Change1 for Russia, Change2 for Ukraine)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <h2>Severity Assessment</h2>
+            <div class="visualization-placeholder">
+                Future Severity Visualization Will Appear Here
+            </div>
+        </div>
+        
+        <div class="footer">
+            Ukraine Conflict Data Dashboard &copy; 2023 - Created for Data Visualization Course
+        </div>
+    </div>
+    
+    <script>
+        // Initialize Chart.js global defaults for dark theme
+        Chart.defaults.color = '#ddd';
+        Chart.defaults.borderColor = '#444';
+        
+        // Reference date for the invasion
+        const INVASION_START = new Date('2022-02-24');
+        const TODAY = new Date();
+        
+        /**
+         * Fetches and parses CSV data
+         * @param {string} url - Path to CSV file
+         * @returns {Promise<Array>} - Parsed data as array of objects
+         */
+        async function fetchCSVData(url) {
+            try {
+                const response = await fetch(url);
+                const csvText = await response.text();
+                
+                return new Promise((resolve, reject) => {
+                    Papa.parse(csvText, {
+                        header: true,
+                        dynamicTyping: true,
+                        complete: results => resolve(results.data),
+                        error: error => reject(error)
+                    });
+                });
+            } catch (error) {
+                console.error('Error fetching CSV data:', error);
+                return [];
+            }
+        }
+        
+        /**
+         * Filters data for air/drone strikes and processes by time period
+         * @param {Array} data - Raw CSV data
+         * @param {string} timeScale - Time scale for aggregation (day, week, month)
+         * @returns {Object} Processed data for visualization
+         */
+        function processDroneStrikeData(data, timeScale = 'week') {
+            // Filter for drone strikes since invasion
+            const droneStrikes = data.filter(row => {
+                if (row.sub_event_type !== 'Air/drone strike') return false;
+                if (!row.event_date) return false;
+                
+                const eventDate = new Date(row.event_date);
+                return eventDate >= INVASION_START && eventDate <= TODAY;
+            });
+            
+            // Sort by date
+            droneStrikes.sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
+            
+            // Group by time period
+            const timeGroups = {};
+            const fatalitiesGroups = {};
+            
+            droneStrikes.forEach(strike => {
+                const date = new Date(strike.event_date);
+                let timeKey;
+                
+                if (timeScale === 'day') {
+                    timeKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+                } else if (timeScale === 'week') {
+                    // Get the monday of the week
+                    const dayOfWeek = date.getDay();
+                    const diff = date.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+                    const monday = new Date(date);
+                    monday.setDate(diff);
+                    timeKey = monday.toISOString().split('T')[0];
+                } else if (timeScale === 'month') {
+                    const year = date.getFullYear();
+                    const month = date.getMonth() + 1;
+                    timeKey = `${year}-${month.toString().padStart(2, '0')}-01`;
+                } else {
+                    timeKey = date.toISOString().split('T')[0];
+                }
+                
+                if (!timeGroups[timeKey]) {
+                    timeGroups[timeKey] = 0;
+                    fatalitiesGroups[timeKey] = 0;
+                }
+                
+                timeGroups[timeKey]++;
+                fatalitiesGroups[timeKey] += strike.fatalities || 0;
+            });
+            
+            // Sort time periods and convert to dates
+            const dateLabels = Object.keys(timeGroups).sort().map(dateStr => new Date(dateStr));
+            
+            // Calculate monthly average
+            const months = (TODAY - INVASION_START) / (1000 * 60 * 60 * 24 * 30.44);
+            const avgMonthlyStrikes = droneStrikes.length / months;
+            
+            // Calculate average fatalities per strike
+            const totalFatalities = droneStrikes.reduce((sum, strike) => sum + (strike.fatalities || 0), 0);
+            const avgFatalitiesPerStrike = droneStrikes.length > 0 ? totalFatalities / droneStrikes.length : 0;
+            
+            return {
+                dates: dateLabels,
+                incidents: dateLabels.map(date => timeGroups[date.toISOString().split('T')[0]] || 0),
+                fatalities: dateLabels.map(date => fatalitiesGroups[date.toISOString().split('T')[0]] || 0),
+                total: droneStrikes.length,
+                totalFatalities: totalFatalities,
+                avgMonthlyStrikes: avgMonthlyStrikes,
+                avgFatalitiesPerStrike: avgFatalitiesPerStrike,
+                rawStrikes: droneStrikes
+            };
+        }
+        
+        /**
+         * Creates cumulative data from time series data
+         * @param {Array} data - Time series data
+         * @returns {Array} - Cumulative data
+         */
+        function createCumulativeData(data) {
+            const cumulative = [];
+            let sum = 0;
+            
+            data.forEach(value => {
+                sum += value;
+                cumulative.push(sum);
+            });
+            
+            return cumulative;
+        }
+        
+        /**
+         * Filters data to a specified time range
+         * @param {Object} data - The full dataset
+         * @param {number} months - Number of months to include
+         * @returns {Object} - Filtered dataset
+         */
+        function filterTimeRange(data, months = null) {
+            if (!months) {
+                return data; // Return all data if no months specified
+            }
+            
+            const cutoffDate = new Date();
+            cutoffDate.setMonth(cutoffDate.getMonth() - months);
+            
+            const dateIndex = data.dates.findIndex(date => date >= cutoffDate);
+            if (dateIndex === -1) return data; // No data in range
+            
+            return {
+                dates: data.dates.slice(dateIndex),
+                incidents: data.incidents.slice(dateIndex),
+                fatalities: data.fatalities.slice(dateIndex),
+                total: data.total,
+                totalFatalities: data.totalFatalities,
+                avgMonthlyStrikes: data.avgMonthlyStrikes,
+                avgFatalitiesPerStrike: data.avgFatalitiesPerStrike,
+                rawStrikes: data.rawStrikes
+            };
+        }
+        
+        /**
+         * Updates the statistics display
+         * @param {Object} data - Processed drone strike data
+         */
+        function updateStatistics(data) {
+            document.getElementById('totalStrikes').textContent = data.total.toLocaleString();
+            document.getElementById('totalFatalities').textContent = data.totalFatalities.toLocaleString();
+            document.getElementById('avgMonthlyStrikes').textContent = Math.round(data.avgMonthlyStrikes).toLocaleString();
+            document.getElementById('avgFatalitiesPerStrike').textContent = data.avgFatalitiesPerStrike.toFixed(1);
+        }
+        
+        /**
+         * Creates and renders the drone strikes chart
+         * @param {Object} data - Processed drone strike data
+         * @param {boolean} cumulative - Whether to show cumulative data
+         */
+        function createDroneStrikesChart(data, cumulative = false) {
+            const ctx = document.getElementById('droneStrikesChart').getContext('2d');
+            document.getElementById('droneStrikesLoading').style.display = 'none';
+            
+            // Prepare data based on cumulative setting
+            const incidentsData = cumulative ? 
+                createCumulativeData(data.incidents) : data.incidents;
+                
+            const fatalitiesData = cumulative ?
+                createCumulativeData(data.fatalities) : data.fatalities;
+            
+            // Set title based on view mode
+            const chartTitle = cumulative ? 
+                'Cumulative Air/Drone Strikes Since Invasion' : 
+                'Air/Drone Strikes by Time Period';
+            
+            // Create gradient for areas
+            const incidentsGradient = ctx.createLinearGradient(0, 0, 0, 400);
+            incidentsGradient.addColorStop(0, 'rgba(0, 176, 255, 0.6)');
+            incidentsGradient.addColorStop(1, 'rgba(0, 176, 255, 0.0)');
+            
+            const fatalitiesGradient = ctx.createLinearGradient(0, 0, 0, 400);
+            fatalitiesGradient.addColorStop(0, 'rgba(255, 68, 68, 0.6)');
+            fatalitiesGradient.addColorStop(1, 'rgba(255, 68, 68, 0.0)');
+            
+            // Destroy previous chart if it exists
+            if (window.droneChart) {
+                window.droneChart.destroy();
+            }
+            
+            // Determine optimal time unit based on data range
+            const dateRange = data.dates.length > 1 ? 
+                (data.dates[data.dates.length - 1] - data.dates[0]) / (1000 * 60 * 60 * 24) : 0;
+            
+            let timeUnit;
+            if (dateRange <= 90) { // 3 months or less
+                timeUnit = 'week';
+            } else if (dateRange <= 180) { // 6 months or less
+                timeUnit = 'month';
+            } else {
+                timeUnit = 'month';
+            }
+            
+            // Create chart
+            window.droneChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.dates,
+                    datasets: [{
+                        label: 'Strikes',
+                        data: incidentsData.map((value, index) => ({
+                            x: data.dates[index],
+                            y: value
+                        })),
+                        borderColor: 'rgba(0, 176, 255, 1)',
+                        backgroundColor: incidentsGradient,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        yAxisID: 'y',
+                        pointBackgroundColor: 'rgba(0, 176, 255, 1)',
+                        pointRadius: data.dates.length > 100 ? 0 : 3,
+                        pointHoverRadius: 5
+                    }, {
+                        label: 'Fatalities',
+                        data: fatalitiesData.map((value, index) => ({
+                            x: data.dates[index],
+                            y: value
+                        })),
+                        borderColor: 'rgba(255, 68, 68, 1)',
+                        backgroundColor: fatalitiesGradient,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        yAxisID: 'y1',
+                        pointBackgroundColor: 'rgba(255, 68, 68, 1)',
+                        pointRadius: data.dates.length > 100 ? 0 : 3,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: false,
+                            text: chartTitle,
+                            color: '#ddd',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(30, 30, 30, 0.9)',
+                            borderColor: '#444',
+                            borderWidth: 1,
+                            titleColor: '#fff',
+                            bodyColor: '#ddd',
+                            padding: 10,
+                            displayColors: true,
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    const date = new Date(tooltipItems[0].parsed.x);
+                                    return date.toLocaleDateString('en-US', { 
+                                        year: 'numeric', 
+                                        month: 'long', 
+                                        day: 'numeric' 
+                                    });
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#ddd',
+                                font: {
+                                    family: "'Uber Move Text', 'Helvetica Neue', Helvetica, sans-serif",
+                                    size: 12
+                                },
+                                usePointStyle: true,
+                                boxWidth: 8
+                            }
+                        },
+                        annotation: {
+                            annotations: {
+                                invasion: {
+                                    type: 'line',
+                                    yMin: 0,
+                                    yMax: 0,
+                                    xMin: INVASION_START,
+                                    xMax: INVASION_START,
+                                    borderColor: 'rgba(255, 255, 255, 0.5)',
+                                    borderWidth: 2,
+                                    label: {
+                                        content: 'Invasion Start',
+                                        enabled: data.dates[0] <= INVASION_START,
+                                        position: 'start',
+                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                        color: '#fff'
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: timeUnit,
+                                tooltipFormat: 'MMM d, yyyy',
+                                displayFormats: {
+                                    day: 'MMM d',
+                                    week: 'MMM d',
+                                    month: 'MMM yyyy'
+                                }
+                            },
+                            ticks: {
+                                color: '#aaa',
+                                maxRotation: 45,
+                                minRotation: 45,
+                                autoSkip: false,
+                                maxTicksLimit: timeUnit === 'week' ? 20 : 12
+                            },
+                            min: data.dates[0],
+                            max: data.dates[data.dates.length - 1],
+                            grid: {
+                                color: 'rgba(70, 70, 70, 0.2)'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Number of Strikes',
+                                color: '#aaa'
+                            },
+                            ticks: {
+                                color: '#aaa'
+                            },
+                            grid: {
+                                color: 'rgba(70, 70, 70, 0.2)'
+                            },
+                            beginAtZero: true
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Fatalities',
+                                color: '#aaa'
+                            },
+                            ticks: {
+                                color: '#aaa'
+                            },
+                            grid: {
+                                display: false
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    elements: {
+                        line: {
+                            tension: 0.4
+                        }
+                    }
+                }
+            });
+            
+            return window.droneChart;
+        }
+        
+        // Initialize the visualization
+        async function initializeDroneStrikesChart() {
+            let isCumulative = false;
+            let timeScale = 'week';
+            let currentMonthsFilter = null;
+            let processedData = null;
+            let rawData = null;
+            
+            try {
+                // Load data
+                document.getElementById('droneStrikesLoading').style.display = 'flex';
+                rawData = await fetchCSVData('Ukraine_clean_full.csv');
+                
+                // Process data
+                processedData = processDroneStrikeData(rawData, timeScale);
+                
+                // Update statistics
+                updateStatistics(processedData);
+                
+                // Create chart
+                createDroneStrikesChart(processedData, isCumulative);
+                
+                // Setup event listeners for controls
+                document.getElementById('toggleCumulative').addEventListener('click', function() {
+                    isCumulative = !isCumulative;
+                    this.textContent = isCumulative ? 'Show Time Series' : 'Show Cumulative';
+                    
+                    // Filter data if needed
+                    const filteredData = currentMonthsFilter ? 
+                        filterTimeRange(processedData, currentMonthsFilter) : 
+                        processedData;
+                    
+                    createDroneStrikesChart(filteredData, isCumulative);
+                });
+                
+                document.getElementById('timeScale').addEventListener('change', function() {
+                    timeScale = this.value;
+                    processedData = processDroneStrikeData(rawData, timeScale);
+                    updateStatistics(processedData);
+                    
+                    // Filter data if needed
+                    const filteredData = currentMonthsFilter ? 
+                        filterTimeRange(processedData, currentMonthsFilter) : 
+                        processedData;
+                    
+                    createDroneStrikesChart(filteredData, isCumulative);
+                });
+                
+                // Time period filter buttons
+                const timeButtons = ['showAll', 'showLast3Months', 'showLast6Months', 'showLastYear'];
+                timeButtons.forEach(buttonId => {
+                    document.getElementById(buttonId).addEventListener('click', function() {
+                        // Remove active class from all buttons
+                        timeButtons.forEach(id => {
+                            document.getElementById(id).classList.remove('active');
+                        });
+                        
+                        // Add active class to clicked button
+                        this.classList.add('active');
+                        
+                        // Set filter
+                        if (buttonId === 'showAll') {
+                            currentMonthsFilter = null;
+                        } else if (buttonId === 'showLast3Months') {
+                            currentMonthsFilter = 3;
+                        } else if (buttonId === 'showLast6Months') {
+                            currentMonthsFilter = 6;
+                        } else if (buttonId === 'showLastYear') {
+                            currentMonthsFilter = 12;
+                        }
+                        
+                        // Apply filter
+                        const filteredData = currentMonthsFilter ? 
+                            filterTimeRange(processedData, currentMonthsFilter) : 
+                            processedData;
+                        
+                        createDroneStrikesChart(filteredData, isCumulative);
+                    });
+                });
+                
+            } catch (error) {
+                console.error('Error initializing drone strikes chart:', error);
+                document.getElementById('droneStrikesLoading').innerHTML = 'Error loading data';
+            }
+        }
+        
+        document.getElementById('enableMaps').addEventListener('click', enablePrimaryMap);
+        document.getElementById('enableMaps2').addEventListener('click', enableSecondaryMap);
+
+        let primaryMapEnabled = false;
+        let secondaryMapEnabled = false;
+
+        function enablePrimaryMap() {
+            if (!primaryMapEnabled) {
+                const mapFrame = document.querySelector('.map-frame:first-child');
+                const placeholder = mapFrame.querySelector('.map-placeholder');
+                const iframe = document.createElement('iframe');
+                iframe.className = 'iframe-container';
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                iframe.src = 'terkep.html';
+                
+                placeholder.replaceWith(iframe);
+                primaryMapEnabled = true;
+            }
+        }
+
+        function enableSecondaryMap() {
+            if (!secondaryMapEnabled) {
+                const mapFrame = document.querySelector('.map-frame:nth-child(2)');
+                const placeholder = mapFrame.querySelector('.map-placeholder');
+                const iframe = document.createElement('iframe');
+                iframe.className = 'iframe-container';
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                iframe.src = 'terkep2.html';
+                
+                placeholder.replaceWith(iframe);
+                secondaryMapEnabled = true;
+            }
+        }
+
+        /**
+         * Processes equipment loss data from CSV
+         * @param {Array} data - Raw CSV data
+         * @param {string} equipmentType - Type of equipment to display
+         * @returns {Object} Processed data for visualization
+         */
+        function processEquipmentData(data, equipmentType = 'Total') {
+            // Filter by date since invasion
+            const equipmentData = data.filter(row => {
+                if (!row.Date) return false;
+                const eventDate = new Date(row.Date);
+                return eventDate >= INVASION_START && eventDate <= TODAY;
+            });
+            
+            // Sort by date
+            equipmentData.sort((a, b) => new Date(a.Date) - new Date(b.Date));
+            
+            // Prepare datasets based on equipment type
+            const dates = equipmentData.map(row => new Date(row.Date));
+            let russianLosses = [];
+            let ukrainianLosses = [];
+            let title = '';
+            
+            switch(equipmentType) {
+                case 'Total':
+                    russianLosses = equipmentData.map(row => row.Russia_Total || 0);
+                    ukrainianLosses = equipmentData.map(row => row.Ukraine_Total || 0);
+                    title = 'Total Equipment Losses';
+                    break;
+                case 'Tanks':
+                    russianLosses = equipmentData.map(row => row.Russia_Tanks || 0);
+                    ukrainianLosses = equipmentData.map(row => row.Ukraine_Tanks || 0);
+                    title = 'Tank Losses';
+                    break;
+                case 'AFV':
+                    russianLosses = equipmentData.map(row => row.Russia_AFV || 0);
+                    ukrainianLosses = equipmentData.map(row => row.Ukraine_AFV || 0);
+                    title = 'Armored Fighting Vehicle Losses';
+                    break;
+                case 'APC':
+                    russianLosses = equipmentData.map(row => row.Russia_APC || 0);
+                    ukrainianLosses = equipmentData.map(row => row.Ukraine_APC || 0);
+                    title = 'Armored Personnel Carrier Losses';
+                    break;
+                case 'Artillery':
+                    russianLosses = equipmentData.map(row => row.Russia_Artillery || 0);
+                    ukrainianLosses = equipmentData.map(row => row.Ukraine_Artillery || 0);
+                    title = 'Artillery Losses';
+                    break;
+                case 'Aircraft':
+                    russianLosses = equipmentData.map(row => row.Russia_Aircraft || 0);
+                    ukrainianLosses = equipmentData.map(row => row.Ukraine_Aircraft || 0);
+                    title = 'Aircraft Losses';
+                    break;
+                case 'Antiair':
+                    russianLosses = equipmentData.map(row => row.Russia_Antiair || 0);
+                    ukrainianLosses = equipmentData.map(row => row.Ukraine_Antiair || 0);
+                    title = 'Anti-Air System Losses';
+                    break;
+            }
+            
+            // Calculate stats
+            const latestRussianLoss = russianLosses[russianLosses.length - 1] || 0;
+            const latestUkrainianLoss = ukrainianLosses[ukrainianLosses.length - 1] || 0;
+            const ratio = latestRussianLoss && latestUkrainianLoss 
+                ? (latestRussianLoss / latestUkrainianLoss).toFixed(2) 
+                : 'N/A';
+            
+            return {
+                dates,
+                russianLosses,
+                ukrainianLosses,
+                title,
+                stats: {
+                    latestRussianLoss,
+                    latestUkrainianLoss,
+                    ratio
+                }
+            };
+        }
+        
+        /**
+         * Updates the equipment statistics display
+         * @param {Object} data - Processed equipment data
+         * @param {string} equipmentType - Type of equipment being displayed
+         */
+        function updateEquipmentStatistics(data, equipmentType) {
+            document.getElementById('totalRussianLosses').textContent = data.stats.latestRussianLoss.toLocaleString();
+            document.getElementById('totalUkrainianLosses').textContent = data.stats.latestUkrainianLoss.toLocaleString();
+            document.getElementById('lossesRatio').textContent = data.stats.ratio;
+            document.getElementById('selectedEquipmentStats').textContent = `${data.stats.latestRussianLoss.toLocaleString()} vs ${data.stats.latestUkrainianLoss.toLocaleString()}`;
+            document.getElementById('selectedEquipmentLabel').textContent = equipmentType;
+        }
+        
+        /**
+         * Filters equipment data to specified time range
+         * @param {Object} data - The full equipment dataset
+         * @param {number} months - Number of months to include
+         * @returns {Object} - Filtered dataset
+         */
+        function filterEquipmentTimeRange(data, months = null) {
+            if (!months) {
+                return data; // Return all data if no months specified
+            }
+            
+            const cutoffDate = new Date();
+            cutoffDate.setMonth(cutoffDate.getMonth() - months);
+            
+            const dateIndex = data.dates.findIndex(date => date >= cutoffDate);
+            if (dateIndex === -1) return data; // No data in range
+            
+            return {
+                dates: data.dates.slice(dateIndex),
+                russianLosses: data.russianLosses.slice(dateIndex),
+                ukrainianLosses: data.ukrainianLosses.slice(dateIndex),
+                title: data.title,
+                stats: data.stats
+            };
+        }
+        
+        /**
+         * Creates and renders the equipment losses chart
+         * @param {Object} data - Processed equipment data
+         */
+        function createEquipmentLossesChart(data) {
+            const ctx = document.getElementById('equipmentLossesChart').getContext('2d');
+            document.getElementById('equipmentLoading').style.display = 'none';
+            
+            // Create gradients for areas
+            const russianGradient = ctx.createLinearGradient(0, 0, 0, 400);
+            russianGradient.addColorStop(0, 'rgba(255, 68, 68, 0.5)');
+            russianGradient.addColorStop(1, 'rgba(255, 68, 68, 0.0)');
+            
+            const ukrainianGradient = ctx.createLinearGradient(0, 0, 0, 400);
+            ukrainianGradient.addColorStop(0, 'rgba(0, 176, 255, 0.5)');
+            ukrainianGradient.addColorStop(1, 'rgba(0, 176, 255, 0.0)');
+            
+            // Destroy previous chart if it exists
+            if (window.equipmentChart) {
+                window.equipmentChart.destroy();
+            }
+            
+            // Determine optimal time unit based on data length and range
+            const dateRange = data.dates.length > 1 ? 
+                (data.dates[data.dates.length - 1] - data.dates[0]) / (1000 * 60 * 60 * 24) : 0;
+            
+            let timeUnit;
+            if (dateRange <= 90) { // 3 months or less
+                timeUnit = 'week';
+            } else if (dateRange <= 180) { // 6 months or less
+                timeUnit = 'month';
+            } else {
+                timeUnit = 'month';
+            }
+            
+            // Create chart
+            window.equipmentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.dates,
+                    datasets: [{
+                        label: 'Russian Losses',
+                        data: data.russianLosses.map((value, index) => ({
+                            x: data.dates[index],
+                            y: value
+                        })),
+                        borderColor: 'rgba(255, 68, 68, 1)',
+                        backgroundColor: russianGradient,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: 'rgba(255, 68, 68, 1)',
+                        pointRadius: data.dates.length > 100 ? 0 : 3,
+                        pointHoverRadius: 5
+                    }, {
+                        label: 'Ukrainian Losses',
+                        data: data.ukrainianLosses.map((value, index) => ({
+                            x: data.dates[index],
+                            y: value
+                        })),
+                        borderColor: 'rgba(0, 176, 255, 1)',
+                        backgroundColor: ukrainianGradient,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: 'rgba(0, 176, 255, 1)',
+                        pointRadius: data.dates.length > 100 ? 0 : 3,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: data.title,
+                            color: '#ddd',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(30, 30, 30, 0.9)',
+                            borderColor: '#444',
+                            borderWidth: 1,
+                            titleColor: '#fff',
+                            bodyColor: '#ddd',
+                            padding: 10,
+                            displayColors: true,
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    const date = new Date(tooltipItems[0].parsed.x);
+                                    return date.toLocaleDateString('en-US', { 
+                                        year: 'numeric', 
+                                        month: 'long', 
+                                        day: 'numeric' 
+                                    });
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#ddd',
+                                font: {
+                                    family: "'Uber Move Text', 'Helvetica Neue', Helvetica, sans-serif",
+                                    size: 12
+                                },
+                                usePointStyle: true,
+                                boxWidth: 8
+                            }
+                        },
+                        annotation: {
+                            annotations: {
+                                invasion: {
+                                    type: 'line',
+                                    yMin: 0,
+                                    yMax: 0,
+                                    xMin: INVASION_START,
+                                    xMax: INVASION_START,
+                                    borderColor: 'rgba(255, 255, 255, 0.5)',
+                                    borderWidth: 2,
+                                    label: {
+                                        content: 'Invasion Start',
+                                        enabled: data.dates[0] <= INVASION_START, // Only show if visible in range
+                                        position: 'start',
+                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                        color: '#fff'
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: timeUnit,
+                                tooltipFormat: 'MMM d, yyyy',
+                                displayFormats: {
+                                    day: 'MMM d',
+                                    week: 'MMM d',
+                                    month: 'MMM yyyy'
+                                }
+                            },
+                            ticks: {
+                                color: '#aaa',
+                                maxRotation: 45,
+                                minRotation: 45,
+                                // Ensure we have enough ticks to properly space out the chart
+                                autoSkip: false,
+                                maxTicksLimit: timeUnit === 'week' ? 20 : 12
+                            },
+                            min: data.dates[0], // Set explicit min to first date in dataset
+                            max: data.dates[data.dates.length - 1], // Set explicit max to last date
+                            grid: {
+                                color: 'rgba(70, 70, 70, 0.2)'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#aaa'
+                            },
+                            grid: {
+                                color: 'rgba(70, 70, 70, 0.2)'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    elements: {
+                        line: {
+                            tension: 0.4
+                        }
+                    }
+                }
+            });
+            
+            return window.equipmentChart;
+        }
+        
+        /**
+         * Initializes the equipment losses visualization
+         */
+        async function initializeEquipmentLossesChart() {
+            let currentEquipmentType = 'Total';
+            let currentMonthsFilter = null;
+            let processedData = null;
+            let rawData = null;
+            
+            try {
+                // Load data
+                document.getElementById('equipmentLoading').style.display = 'flex';
+                rawData = await fetchCSVData('EQ_clean.csv');
+                
+                // Process datas
+                processedData = processEquipmentData(rawData, currentEquipmentType);
+                
+                // Update statistics
+                updateEquipmentStatistics(processedData, currentEquipmentType);
+                
+                // Create chart
+                createEquipmentLossesChart(processedData);
+                
+                // Setup event listeners for equipment type selector
+                document.getElementById('equipmentType').addEventListener('change', function() {
+                    currentEquipmentType = this.value;
+                    processedData = processEquipmentData(rawData, currentEquipmentType);
+                    updateEquipmentStatistics(processedData, currentEquipmentType);
+                    
+                    // Filter data if needed
+                    const filteredData = currentMonthsFilter ? 
+                        filterEquipmentTimeRange(processedData, currentMonthsFilter) : 
+                        processedData;
+                    
+                    createEquipmentLossesChart(filteredData);
+                });
+                
+                // Time period filter buttons
+                const timeButtons = ['equipShowAll', 'equipLast3Months', 'equipLast6Months'];
+                timeButtons.forEach(buttonId => {
+                    document.getElementById(buttonId).addEventListener('click', function() {
+                        // Remove active class from all buttons
+                        timeButtons.forEach(id => {
+                            document.getElementById(id).classList.remove('active');
+                        });
+                        
+                        // Add active class to clicked button
+                        this.classList.add('active');
+                        
+                        // Set filter
+                        if (buttonId === 'equipShowAll') {
+                            currentMonthsFilter = null;
+                        } else if (buttonId === 'equipLast3Months') {
+                            currentMonthsFilter = 3;
+                        } else if (buttonId === 'equipLast6Months') {
+                            currentMonthsFilter = 6;
+                        }
+                        
+                        // Apply filter
+                        const filteredData = currentMonthsFilter ? 
+                            filterEquipmentTimeRange(processedData, currentMonthsFilter) : 
+                            processedData;
+                        
+                        createEquipmentLossesChart(filteredData);
+                    });
+                });
+                
+            } catch (error) {
+                console.error('Error initializing equipment losses chart:', error);
+                document.getElementById('equipmentLoading').innerHTML = 'Error loading data';
+            }
+        }
+
+        // Initialize the visualization when the page loads
+        window.addEventListener('load', () => {
+            initializeDroneStrikesChart();
+            initializeEquipmentLossesChart();
+            initializeDailyLossesChart();
+        });
+
+        // Function to initialize daily losses chart
+        async function initializeDailyLossesChart() {
+            try {
+                // Create test data (fallback)
+                const createTestData = () => {
+                    const startDate = new Date('2022-02-25');
+                    return Array.from({ length: 30 }, (_, i) => {
+                        const date = new Date(startDate);
+                        date.setDate(date.getDate() + i);
+                        return {
+                            date: date,
+                            russianChange: Math.floor(Math.random() * 50) + 10,
+                            ukrainianChange: Math.floor(Math.random() * 30) + 5
+                        };
+                    });
+                };
+
+                // Set loading state
+                document.getElementById('dailyLossesLoading').innerHTML = 'Loading data...';
+                
+                // Try to load actual data
+                let chartData = [];
+                try {
+                    const response = await fetch('EQ_clean.csv');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const csvText = await response.text();
+                    console.log("CSV data sample:", csvText.substring(0, 200)); // Log a sample of the data
+                    
+                    // Parse CSV
+                    const result = Papa.parse(csvText, {
+                        header: true,
+                        dynamicTyping: true,
+                        skipEmptyLines: true
+                    });
+                    
+                    if (result.errors && result.errors.length > 0) {
+                        console.warn("CSV parsing had errors:", result.errors);
+                    }
+                    
+                    // Process data
+                    const rawData = result.data.filter(row => 
+                        row.Date && 
+                        typeof row.Change1 !== 'undefined' && 
+                        typeof row.Change2 !== 'undefined'
+                    );
+                    
+                    if (rawData.length > 0) {
+                        console.log("First row sample:", rawData[0]);
+                        
+                        chartData = rawData.map(row => ({
+                            date: new Date(row.Date),
+                            russianChange: parseFloat(row.Change1) || 0,
+                            ukrainianChange: parseFloat(row.Change2) || 0
+                        })).filter(item => !isNaN(item.date.getTime()));
+                        
+                        console.log(`Processed ${chartData.length} data points`);
+                    } else {
+                        console.warn("No valid data rows found, using test data");
+                        chartData = createTestData();
+                    }
+                } catch (error) {
+                    console.error("Error loading CSV:", error);
+                    chartData = createTestData();
+                }
+                
+                // Hide loading indicator
+                document.getElementById('dailyLossesLoading').style.display = 'none';
+                
+                // Store reference to chart for updating
+                let dailyChart = null;
+                
+                // Function to filter by time period
+                function filterDataByMonths(data, months) {
+                    if (!months) return data;
+                    
+                    const cutoffDate = new Date();
+                    cutoffDate.setMonth(cutoffDate.getMonth() - months);
+                    
+                    return data.filter(item => item.date >= cutoffDate);
+                }
+                
+                // Function to create/update chart
+                function createOrUpdateChart(data) {
+                    // Sort data by date
+                    data.sort((a, b) => a.date - b.date);
+                    
+                    const ctx = document.getElementById('dailyLossesChart').getContext('2d');
+                    
+                    // Destroy existing chart if it exists
+                    if (dailyChart) {
+                        dailyChart.destroy();
+                    }
+                    
+                    // Create new chart
+                    dailyChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.map(d => d.date),
+                            datasets: [
+                                {
+                                    label: 'Russia Daily Losses',
+                                    data: data.map(d => d.russianChange),
+                                    borderColor: 'rgba(255, 99, 132, 1)',
+                                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                    fill: true,
+                                    tension: 0.3,
+                                    borderWidth: 2,
+                                    pointRadius: 1
+                                },
+                                {
+                                    label: 'Ukraine Daily Losses',
+                                    data: data.map(d => d.ukrainianChange),
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                    fill: true,
+                                    tension: 0.3,
+                                    borderWidth: 2,
+                                    pointRadius: 1
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Daily Equipment Losses Comparison',
+                                    font: {
+                                        size: 16
+                                    }
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    type: 'time',
+                                    time: {
+                                        unit: 'month',
+                                        displayFormats: {
+                                            month: 'MMM yyyy'
+                                        }
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'Date'
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Equipment Lost'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    
+                    return dailyChart;
+                }
+                
+                // Initial chart creation
+                createOrUpdateChart(chartData);
+                
+                // Handle filter buttons
+                const timeButtons = ['dailyShowAll', 'dailyLast3Months', 'dailyLast6Months', 'dailyLastYear'];
+                timeButtons.forEach(buttonId => {
+                    document.getElementById(buttonId).addEventListener('click', function() {
+                        // Remove active class from all buttons
+                        timeButtons.forEach(id => {
+                            document.getElementById(id).classList.remove('active');
+                        });
+                        
+                        // Add active class to clicked button
+                        this.classList.add('active');
+                        
+                        // Filter the data
+                        let filteredData;
+                        if (buttonId === 'dailyShowAll') {
+                            filteredData = chartData;
+                        } else if (buttonId === 'dailyLast3Months') {
+                            filteredData = filterDataByMonths(chartData, 3);
+                        } else if (buttonId === 'dailyLast6Months') {
+                            filteredData = filterDataByMonths(chartData, 6);
+                        } else if (buttonId === 'dailyLastYear') {
+                            filteredData = filterDataByMonths(chartData, 12);
+                        }
+                        
+                        // Update the chart
+                        createOrUpdateChart(filteredData);
+                    });
+                });
+            } catch (error) {
+                console.error('Error with daily losses chart:', error);
+                document.getElementById('dailyLossesLoading').style.display = 'block';
+                document.getElementById('dailyLossesLoading').innerHTML = 'Error creating chart: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html> 
