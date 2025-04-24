@@ -1373,7 +1373,9 @@
                 // Try to load actual data
                 let chartData = [];
                 try {
-                    const response = await fetch('EQ_clean.csv');
+                    // Use the getDataUrl function we already have
+                    const dataUrl = await getDataUrl('EQ_clean.csv');
+                    const response = await fetch(dataUrl);
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
@@ -1381,37 +1383,58 @@
                     const csvText = await response.text();
                     console.log("CSV data sample:", csvText.substring(0, 200)); // Log a sample of the data
                     
-                    // Parse CSV
+                    // Parse CSV with explicit delimiter
                     const result = Papa.parse(csvText, {
                         header: true,
+                        delimiter: ',', // Explicitly set delimiter to comma
                         dynamicTyping: true,
-                        skipEmptyLines: true
+                        skipEmptyLines: true,
+                        transformHeader: (header) => header.trim(), // Trim whitespace from headers
+                        transform: (value) => value.trim(), // Trim whitespace from values
+                        complete: function(results, file) {
+                            console.log("Parsing complete:", results.data.length, "rows");
+                            console.log("First row:", results.data[0]);
+                        },
+                        error: function(error, file) {
+                            console.error("Parsing error:", error);
+                        }
                     });
                     
-                    if (result.errors && result.errors.length > 0) {
-                        console.warn("CSV parsing had errors:", result.errors);
-                    }
-                    
-                    // Process data
-                    const rawData = result.data.filter(row => 
-                        row.Date && 
-                        typeof row.Change1 !== 'undefined' && 
-                        typeof row.Change2 !== 'undefined'
-                    );
-                    
-                    if (rawData.length > 0) {
-                        console.log("First row sample:", rawData[0]);
+                    // Process data with validation
+                    if (result.data && result.data.length > 0) {
+                        console.log("CSV Headers:", Object.keys(result.data[0]));
                         
-                        chartData = rawData.map(row => ({
-                            date: new Date(row.Date),
-                            russianChange: parseFloat(row.Change1) || 0,
-                            ukrainianChange: parseFloat(row.Change2) || 0
-                        })).filter(item => !isNaN(item.date.getTime()));
+                        const rawData = result.data.filter(row => {
+                            // Validate required fields exist and are not undefined/null
+                            const hasRequiredFields = row.Date && 
+                                                    ('Change1' in row) && 
+                                                    ('Change2' in row);
+                            
+                            // Validate date format
+                            const isValidDate = !isNaN(new Date(row.Date).getTime());
+                            
+                            // Validate numeric values
+                            const isValidChange1 = !isNaN(parseFloat(row.Change1));
+                            const isValidChange2 = !isNaN(parseFloat(row.Change2));
+                            
+                            return hasRequiredFields && isValidDate && isValidChange1 && isValidChange2;
+                        });
                         
-                        console.log(`Processed ${chartData.length} data points`);
-                    } else {
-                        console.warn("No valid data rows found, using test data");
-                        chartData = createTestData();
+                        if (rawData.length > 0) {
+                            console.log("Valid rows found:", rawData.length);
+                            console.log("Sample valid row:", rawData[0]);
+                            
+                            chartData = rawData.map(row => ({
+                                date: new Date(row.Date),
+                                russianChange: parseFloat(row.Change1) || 0,
+                                ukrainianChange: parseFloat(row.Change2) || 0
+                            }));
+                            
+                            console.log(`Processed ${chartData.length} data points`);
+                        } else {
+                            console.warn("No valid rows found after validation");
+                            chartData = createTestData();
+                        }
                     }
                 } catch (error) {
                     console.error("Error loading CSV:", error);
